@@ -1,0 +1,7 @@
+name = "OpticSimVis"
+uuid = "d115d6ac-2c82-4282-b69b-fe09df21ab27"
+authors = ["Ran Gal <rgal@microsoft.com>"]
+version = "0.0.1"
+
+[deps]
+Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
