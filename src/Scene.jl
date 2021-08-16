@@ -6,18 +6,21 @@ struct Scene <: AbstractScene
     _windows::Union{Blink.Window, Nothing}
     _root::AbstractSceneObject
 
-    function Scene()
+    function Scene(; openWindow::Bool = false)
         vis = MeshCat.Visualizer()
  
-        window_defaults = Blink.@d(
-            :title => "OpticSim Viewer", 
-            :width=>1200, 
-            :height=>800,
-        )
-        win = Blink.Window(window_defaults)
-         
-        Blink.AtomShell.opentools(win)
-        open(vis, win)
+        win = nothing
+        if (openWindow)
+            window_defaults = Blink.@d(
+                :title => "OpticSim Viewer", 
+                :width=>1200, 
+                :height=>800,
+            )
+            win = Blink.Window(window_defaults)
+            
+            Blink.AtomShell.opentools(win)
+            open(vis, win)
+        end
  
         root = prepare_scene!(vis)
 
@@ -42,6 +45,23 @@ vis(s::Scene) = s._vis
 win(s::Scene) = s._window
 root(s::Scene) = s._root
 
+function clear(s::Scene)
+    root_so = root(s)
+    root_children = prop(root_so, :children)
+    while(length(root_children) > 0)
+        delete!(root_children[1])
+        root_children = prop(root_so, :children)
+    end
+
+    # index = findfirst(x -> x===so, parent_children)
+    # if (index === nothing)
+    #     @error "Can't find the child $(name(so)) to delete"
+    # end
+    # deleteat!(parent_children, index)
+
+    # v = vis(so)
+    # delete!(v)
+end
 
 function prepare_scene!(vis::MeshCat.Visualizer)
     root = EmptySceneObject(name="OpticSim")

@@ -25,5 +25,12 @@ include("Scene.jl")
 
 include("OpticSimAPI/General.jl")
 include("OpticSimAPI/Emitters.jl")
- 
+
+include("JSInterface/JuliaJSBridge.jl")
+include("UI/UIControls.jl")
+include("UI/SimpleUI.jl")
+
+using ..UIControls
+using ..SimpleUI
+
 end # module

@@ -1,48 +1,84 @@
 
 
 module EmittersConsts
-    const ARRROW_LENGTH = 0.5
-    const ARRROW_SIZE = 0.01
-    const MARKER_SIZE = 1
+    ARRROW_LENGTH = 0.3
+    ARRROW_SIZE = 0.01
+    MARKER_SIZE = 1
 end
 
 
 #-------------------------------------
 # draw debug information - local axes and positions
 #-------------------------------------
-function maybe_draw_debug_info(scene::Scene, o::Origins.AbstractOriginDistribution; transform::Geometry.Transform = Transform(), debug::Bool=false, kwargs...) where {T<:Real}
+function maybe_draw_debug_info(scene::Scene, so::AbstractSceneObject, o::Origins.AbstractOriginDistribution; transform::Geometry.Transform = Transform(), debug::Bool=false, kwargs...) where {T<:Real}
 
-    # dir = forward(transform)
-    # uv = SVector{3}(right(transform))
-    # vv = SVector{3}(up(transform))
-    # pos = origin(transform)
+    dir = forward(transform)
+    uv = SVector{3}(right(transform))
+    vv = SVector{3}(up(transform))
+    pos = origin(transform)
 
-    # if (debug)
-    #     # this is a stupid hack to force makie to render in 3d - for some scenes, makie decide with no apperent reason to show in 2d instead of 3d
-    #     Makie.scatter!(scene, [pos[1], pos[1]+0.1], [pos[2], pos[2]+0.1], [pos[3], pos[3]+0.1], color=:red, markersize=0)
+    if (debug)
 
-    #     # draw the origin and normal of the surface
-    #     Makie.scatter!(scene, pos, color=:blue, markersize = MARKER_SIZE * visual_size(o))
+        debug_so = EmptySceneObject(name="Debug Info")
+        OpticSimVis.parent!(debug_so , so)
 
-    #     # normal
-    #     arrow_size = ARRROW_SIZE * visual_size(o)
-    #     arrow_start = pos
-    #     arrow_end = dir * ARRROW_LENGTH * visual_size(o) 
-    #     Makie.arrows!(scene.scene, [Makie.Point3f0(arrow_start)], [Makie.Point3f0(arrow_end)], arrowsize=arrow_size, linewidth=arrow_size * 0.5, linecolor=:blue, arrowcolor=:blue)
-    #     arrow_end = uv * 0.5 * ARRROW_LENGTH * visual_size(o) 
-    #     Makie.arrows!(scene.scene, [Makie.Point3f0(arrow_start)], [Makie.Point3f0(arrow_end)], arrowsize= 0.5 * arrow_size, linewidth=arrow_size * 0.5, linecolor=:red, arrowcolor=:red)
-    #     arrow_end = vv * 0.5 * ARRROW_LENGTH * visual_size(o) 
-    #     Makie.arrows!(scene.scene, [Makie.Point3f0(arrow_start)], [Makie.Point3f0(arrow_end)], arrowsize= 0.5 * arrow_size, linewidth=arrow_size * 0.5, linecolor=:green, arrowcolor=:green)
+        # # this is a stupid hack to force makie to render in 3d - for some scenes, makie decide with no apperent reason to show in 2d instead of 3d
+        # Makie.scatter!(scene, [pos[1], pos[1]+0.1], [pos[2], pos[2]+0.1], [pos[3], pos[3]+0.1], color=:red, markersize=0)
 
-    #     # draw all the samples origins
-    #     positions = map(x -> transform*x, collect(o))
-    #     positions = collect(Makie.Point3f0, positions)
-    #     Makie.scatter!(scene, positions, color=:green, markersize = MARKER_SIZE * visual_size(o))
+        # draw the origin and normal of the surface
+        # Makie.scatter!(scene, pos, color=:blue, markersize = MARKER_SIZE * visual_size(o))
+        # draw!(scene, [pos], size=0.02, color=:blue)
 
-    #     # positions = collect(Makie.Point3f0, o)
-    #     # Makie.scatter!(scene, positions, color=:green, markersize = MARKER_SIZE * visual_size(o))
-    # end
+        # draw a point in the origin as a point cloud
+        pc_mat = OpticSimVis.Material(color=RGBA(0.1, 0.1, 9.1, 1.0), size=0.05)
+        pc = OpticSimVis.PointCloud(points=[pos], material=pc_mat, name="Origin Point")
+        OpticSimVis.parent!(pc , debug_so)
 
+        x_axis = uv * 0.5 * EmittersConsts.ARRROW_LENGTH * visual_size(o)
+        y_axis = vv * 0.5 * EmittersConsts.ARRROW_LENGTH * visual_size(o)
+        z_axis = dir * EmittersConsts.ARRROW_LENGTH * visual_size(o)
+        axes = OpticSimVis.Axes(
+            tr=Transform(pos), 
+            x_axis=x_axis,
+            y_axis=y_axis,
+            z_axis=z_axis,
+            # material=axes_mat, 
+            name="Local Axes")
+        OpticSimVis.parent!(axes , debug_so)
+
+    end
+
+end
+
+
+#-------------------------------------
+# draw point origin
+#-------------------------------------
+function draw!(scene::Scene, o::Origins.Point; transform::Geometry.Transform = Transform(), kwargs...) where {T<:Real}
+
+    pos = origin(transform)
+    obj = draw!(scene, [pos]; size=0.01, kwargs...)
+
+    maybe_draw_debug_info(scene, obj[:scene_object], o; transform=transform, kwargs...)
+    return obj
+end
+
+#-------------------------------------
+# draw RectGrid and RectUniform origins
+#-------------------------------------
+function draw!(scene::Scene, o::Union{Origins.RectGrid, Origins.RectUniform}; transform::Geometry.Transform = Transform(), kwargs...) where {T<:Real}
+    dir = forward(transform)
+    uv = SVector{3}(right(transform))
+    vv = SVector{3}(up(transform))
+    pos = origin(transform)
+
+    plane = OpticSim.Plane(dir, pos)
+    rect = OpticSim.Rectangle(plane, o.width / 2, o.height / 2, uv, vv)
+    
+    obj = draw!(scene, rect;  kwargs...)
+
+    maybe_draw_debug_info(scene, obj[:scene_object], o; transform=transform, kwargs...)
+    return obj
 end
 
 
@@ -57,9 +93,10 @@ function draw!(scene::Scene, o::Origins.Hexapolar{T}; transform::Geometry.Transf
 
     plane = OpticSim.Plane(dir, pos)
     ellipse = OpticSim.Ellipse(plane, o.halfsizeu, o.halfsizev, uv, vv)
-    draw!(scene, ellipse;  kwargs...)
+    obj = draw!(scene, ellipse;  kwargs...)
 
-    # maybe_draw_debug_info(scene, o; transform=transform, kwargs...)
+    maybe_draw_debug_info(scene, obj[:scene_object], o; transform=transform, kwargs...)
+    return obj
 end
 
 
@@ -83,8 +120,6 @@ function draw!(scene::Scene, s::Sources.Source{T}; parent_transform::Geometry.Tr
 
         base_so = obj[:scene_object]
 
-
-        
         points = Vector{SVector{3, Float64}}(undef, size(m)[1] * 2)
         for i in 1:size(m)[1]
             point = SVector(m[i,1], m[i, 2], m[i, 3])
@@ -95,13 +130,14 @@ function draw!(scene::Scene, s::Sources.Source{T}; parent_transform::Geometry.Tr
             points[index+1] = point2
         end
 
-        @info typeof(points)
+        # @info typeof(points)
         segments_mat = OpticSimVis.Material(color=RGBA(0.9, 0.9, 0.1, 0.5))
-        segments = OpticSimVis.LineSegments(points; 
+        segments = OpticSimVis.LineSegments(
+            points=points, 
             tr=Transform(Vec3(0.0, 0.0, 0.0)), 
             material=segments_mat, 
             name="Debug Rays")
-        OpticSimVis.set_parent!(segments, base_so)
+        OpticSimVis.parent!(segments, base_so)
     
 
         # debug_so = EmptySceneObject(name="Debug")

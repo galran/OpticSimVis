@@ -1,44 +1,53 @@
 
 
-name(so::AbstractSceneObject) = so._name
-geometry(so::AbstractSceneObject) = @error "method not implemented"
-# components(so::AbstractSceneObject) = so._components
+props(so::AbstractSceneObject) = so._props
+function prop(so::AbstractSceneObject, p::Symbol)
+    return get(props(so), p, nothing)
+end
+function prop!(so::AbstractSceneObject, p::Symbol, val::Any)
+    props(so)[p] = val
+end
 
-tr(so::AbstractSceneObject) = so._tr
+name(so::AbstractSceneObject) = prop(so, :name)
+
+tr(so::AbstractSceneObject) = prop(so, :tr)
 function tr!(so::AbstractSceneObject, tr::Transform) 
-    s._tr = tr
-    # update scene
+    prop!(so, :tr, tr)
 end
 
-local_tr(so::AbstractSceneObject) = so._tr
+local_tr(so::AbstractSceneObject) = prop(so, :tr)
 function local_tr!(so::AbstractSceneObject, local_tr::Transform) 
-    so._tr = local_tr
-    update!(so)
-    # update scene
+    prop!(so, :tr, local_tr)
 end
 
 
-vis(so::AbstractSceneObject) = so._vis
+vis(so::AbstractSceneObject) = prop(so, :vis)
 function vis!(so::AbstractSceneObject, vis::MeshCat.Visualizer) 
-    so._vis = vis
+    prop!(so, :vis, vis)
 end
 
-scene(so::AbstractSceneObject) = so._scene
+scene(so::AbstractSceneObject) = prop(so, :scene)
 function scene!(so::AbstractSceneObject, s::AbstractScene) 
-    s._scene = s
-    # update scene
+    prop!(so, :scene, s)
 end
 
-parent(so::AbstractSceneObject) = so._parent
-function set_parent!(so::AbstractSceneObject, parent_so::AbstractSceneObject)
-    so._parent = parent_so
+parent(so::AbstractSceneObject) = prop(so, :parent)
+function parent!(so::AbstractSceneObject, parent_so::AbstractSceneObject)
+    prop!(so, :parent, parent_so)
+
+    parent_children = prop(parent_so, :children)
+    index = findfirst(x -> x===so, parent_children)
+    if (index === nothing)
+        push!(parent_children, so)
+    end
 
     update!(so)
 end
 
-material(so::AbstractSceneObject) = so._material
+material(so::AbstractSceneObject) = prop(so, :material)
 function material!(so::AbstractSceneObject, mat::Material)
-    so._material = mat
+    prop!(so, :material, mat)
+    
     update!(so)
 end
 
@@ -50,63 +59,112 @@ function update!(so::AbstractSceneObject)
     render!(so)
 end
 
-#-----------------------------------------------------------------
-mutable struct EmptySceneObject <: AbstractSceneObject
-    _name::String
-    _tr::Transform
-    _vis::Union{MeshCat.Visualizer, Nothing}
-    _scene::Union{AbstractScene, Nothing}
-    _parent::Union{AbstractSceneObject, Nothing}
+function Base.delete!(so::AbstractSceneObject)
+    parent_so = prop(so, :parent)
+    parent_children = prop(parent_so, :children)
+    index = findfirst(x -> x===so, parent_children)
+    if (index === nothing)
+        @error "Can't find the child $(name(so)) to delete"
+    end
+    deleteat!(parent_children, index)
 
-    function EmptySceneObject(;
-        name::String = "defulatEmptySceneObject", 
-        tr::Transform = identitytransform() 
-    )
-        return new(name, tr, nothing, nothing)
+    v = vis(so)
+    delete!(v)
+
+    # render!(so)
+end
+
+function display(so::AbstractSceneObject, level=0)
+    print(' '^(3*level))
+    println(name(so))
+    children = prop(so, :children)
+    for child in children
+        display(child, level+1)
     end
 end
 
-function geometry(e::EmptySceneObject) 
-    # dummy zero size box
-    box = GeometryBasics.HyperRectangle(GeometryBasics.Vec(0., 0, 0), GeometryBasics.Vec(0., 0, 0))
-    return box 
+
+function build_props(;kwargs...)
+    res = Dict{Symbol, Any}(
+        :tr => identitytransform(),
+        :children => Vector{AbstractSceneObject}(undef, 0),
+    )
+    for a in kwargs
+        res[a[1]] = a[2]
+    end
+    return res
+end
+
+
+
+#-----------------------------------------------------------------
+# Empty Scene Object 
+#-----------------------------------------------------------------
+mutable struct EmptySceneObject <: AbstractSceneObject
+    _props::Dict{Symbol, Any}
+
+    function EmptySceneObject(;kwargs...)
+        props = build_props(;kwargs...)
+        return new(props)
+    end
 end
 
 function render!(e::EmptySceneObject) 
 end
 
+#-----------------------------------------------------------------
+# Box
+#-----------------------------------------------------------------
+mutable struct PointCloud <: AbstractSceneObject
+    _props::Dict{Symbol, Any}
+
+    function PointCloud(;name="defaultPoints", points::Vector{SVector{3, Float64}} = [], kwargs...)
+        props = build_props(;name=name, points=points, kwargs...)
+
+        return new(props)
+    end
+end
+
+points(pc::PointCloud) = prop(pc, :points)
+
+function render!(pc::PointCloud) 
+    v = vis(pc)
+
+    points = prop(pc, :points)
+
+    mat = material(pc)
+    if (mat !== nothing)
+        mat_color = color(mat)
+        colors = repeat([mat_color], length(points))
+        pointcloud = MeshCat.PointCloud(points, colors)
+    else
+        pointcloud = MeshCat.PointCloud(points)
+    end
+
+    if (mat !== nothing)
+        MeshCat.setobject!(v, pointcloud, points_material(mat))
+        # MeshCat.setobject!(v, pointcloud)
+    else
+        MeshCat.setobject!(v, pointcloud)
+    end
+
+    MeshCat.settransform!(v, tr2affine(local_tr(pc)))
+end
 
 #-----------------------------------------------------------------
 # Box
 #-----------------------------------------------------------------
 mutable struct Box <: AbstractSceneObject
-    _name::String
-    _tr::Transform
-    _vis::Union{MeshCat.Visualizer, Nothing}
-    _scene::Union{AbstractScene, Nothing}
-    _parent::Union{AbstractSceneObject, Nothing}
-    _material::Union{Material, Nothing}
+    _props::Dict{Symbol, Any}
 
-    _size::SVector{3, Float64}
+    function Box(;name="defaultBox", size::SVector{3, Float64} = SVector(1.0, 1.0, 1.0), kwargs...)
+        props = build_props(;name=name, size=size, kwargs...)
 
-    function Box(;
-        name::String = "defulatBoxObject", 
-        tr::Transform = identitytransform(), 
-        size::SVector{3, Float64} = SVector(1.0, 1.0, 1.0),
-        material::Union{Material, Nothing} = nothing,
-        parent = nothing 
-    )
-        return new(name, tr, nothing, nothing, parent, material, size)
+        return new(props)
     end
 end
 
-Base.size(b::Box) = b._size
-
-# function geometry(b::Box) 
-#     min_point = size(b) * -0.5
-
-#     return box 
-# end
+Base.size(b::Box) = prop(b, :size)
 
 function render!(b::Box) 
     v = vis(b)
@@ -119,34 +177,24 @@ function render!(b::Box)
         MeshCat.setobject!(v, box)
     end
 
-    MeshCat.settransform!(v, tr2affine(local_tr(b)))
+    affine_map = tr2affine(local_tr(b))
+    MeshCat.settransform!(v, affine_map)
 end
 
 #-----------------------------------------------------------------
 # MeshCat.Mesh
 #-----------------------------------------------------------------
 mutable struct Mesh <: AbstractSceneObject
-    _name::String
-    _tr::Transform
-    _vis::Union{MeshCat.Visualizer, Nothing}
-    _scene::Union{AbstractScene, Nothing}
-    _parent::Union{AbstractSceneObject, Nothing}
-    _material::Union{Material, Nothing}
+    _props::Dict{Symbol, Any}
 
-    _mesh::GeometryBasics.AbstractMesh
+    function Mesh(; name="defaultMesh", mesh::GeometryBasics.AbstractMesh, kwargs...)
+        props = build_props(; mesh=mesh, name=name, kwargs...)
 
-    function Mesh(mesh::GeometryBasics.AbstractMesh;
-        name::String = "defulatMeshObject", 
-        tr::Transform = identitytransform(), 
-        material::Union{Material, Nothing} = nothing,
-        parent = nothing
-    )
-        return new(name, tr, nothing, nothing, parent, material, mesh)
+        return new(props)
     end
 end
 
-mesh(m::Mesh) = m._mesh
-
+mesh(m::Mesh) = prop(m, :mesh)
 
 function render!(m::Mesh) 
     v = vis(m)
@@ -166,28 +214,17 @@ end
 # Arrow
 #-----------------------------------------------------------------
 mutable struct Arrow <: AbstractSceneObject
-    _name::String
-    _tr::Transform
-    _vis::Union{MeshCat.Visualizer, Nothing}
-    _scene::Union{AbstractScene, Nothing}
-    _parent::Union{AbstractSceneObject, Nothing}
-    _material::Union{Material, Nothing}
+    _props::Dict{Symbol, Any}
 
-    _from::SVector{3, Float64}
-    _to::SVector{3, Float64}
+    function Arrow(; name="defaultArrow", from::SVector{3, Float64}, to::SVector{3, Float64}, kwargs...)
+        props = build_props(; from=from, to=to, name=name, kwargs...)
 
-    function Arrow(from::SVector{3, Float64}, to::SVector{3, Float64};
-        name::String = "defulatMeshObject", 
-        tr::Transform = identitytransform(), 
-        material::Union{Material, Nothing} = nothing,
-        parent = nothing
-    )
-        return new(name, tr, nothing, nothing, parent, material, from, to)
+        return new(props)
     end
 end
 
-from(a::Arrow) = a._from
-to(a::Arrow) = a._to
+from(a::Arrow) = prop(a, :from)
+to(a::Arrow) = prop(a, :to)
 
 function render!(a::Arrow) 
     v = vis(a)
@@ -204,7 +241,7 @@ function render!(a::Arrow)
 
     arrow = MeshCat.ArrowVisualizer(v)
     MeshCat.setobject!(arrow, material(mat))
-    MeshCat.settransform!(arrow, point, vec, shaft_radius=0.1)
+    MeshCat.settransform!(arrow, point, vec)
 end
 #-----------------------------------------------------------------
 
@@ -212,26 +249,24 @@ end
 # Axes
 #-----------------------------------------------------------------
 mutable struct Axes <: AbstractSceneObject
-    _name::String
-    _tr::Transform
-    _vis::Union{MeshCat.Visualizer, Nothing}
-    _scene::Union{AbstractScene, Nothing}
-    _parent::Union{AbstractSceneObject, Nothing}
-    _material::Union{Material, Nothing}
+    _props::Dict{Symbol, Any}
 
-    _scale::SVector{3, Float64}
-
-    function Axes(scale::SVector{3, Float64} = SVector(1.0, 0.6, 0.6);
-        name::String = "defulatAxesObject", 
-        tr::Transform = identitytransform(), 
-        material::Union{Material, Nothing} = nothing,
-        parent = nothing
+    function Axes(; 
+        name="defaultAxes", 
+        x_axis::SVector{3, Float64} = unitX3(), 
+        y_axis::SVector{3, Float64} = unitY3(), 
+        z_axis::SVector{3, Float64} = unitZ3(), 
+        kwargs...
     )
-        return new(name, tr, nothing, nothing, parent, material, scale)
+        props = build_props(; x_axis=x_axis, y_axis=y_axis, z_axis=z_axis, name=name, kwargs...)
+
+        return new(props)
     end
 end
 
-scale(a::Axes) = a._scale
+x_axis(a::Axes) = prop(a, :x_axis)
+y_axis(a::Axes) = prop(a, :y_axis)
+z_axis(a::Axes) = prop(a, :z_axis)
 
 function render!(a::Axes) 
     v = vis(a)
@@ -243,24 +278,23 @@ function render!(a::Axes)
     point = GeometryBasics.Point(0.0, 0.0, 0.0)
 
     color!(mat, Colors.RGBA(0.9, 0.1, 0.1, 1.0))
-    vec = GeometryBasics.Vec(1.0, 0.0, 0.0)
+    vec = GeometryBasics.Vec(prop(a, :x_axis))
     arrow = MeshCat.ArrowVisualizer(v["X"])
     MeshCat.setobject!(arrow, material(mat))
-    MeshCat.settransform!(arrow, point, vec, shaft_radius=0.1)
+    MeshCat.settransform!(arrow, point, vec)
 
     color!(mat, Colors.RGBA(0.1, 0.9, 0.1, 1.0))
-    vec = GeometryBasics.Vec(0.0, 1.0, 0.0)
+    vec = GeometryBasics.Vec(prop(a, :y_axis))
     arrow = MeshCat.ArrowVisualizer(v["Y"])
     MeshCat.setobject!(arrow, material(mat))
-    MeshCat.settransform!(arrow, point, vec, shaft_radius=0.1)
+    MeshCat.settransform!(arrow, point, vec)
 
     color!(mat, Colors.RGBA(0.1, 0.1, 0.9, 1.0))
-    vec = GeometryBasics.Vec(0.0, 0.0, 1.0)
+    vec = GeometryBasics.Vec(prop(a, :z_axis))
     arrow = MeshCat.ArrowVisualizer(v["Z"])
     MeshCat.setobject!(arrow, material(mat))
-    MeshCat.settransform!(arrow, point, vec, shaft_radius=0.1)
+    MeshCat.settransform!(arrow, point, vec)
 
-    @info local_tr(a)
     MeshCat.settransform!(v, tr2affine(local_tr(a)))
 end
 #-----------------------------------------------------------------
@@ -269,27 +303,16 @@ end
 # Line Segments
 #-----------------------------------------------------------------
 mutable struct LineSegments <: AbstractSceneObject
-    _name::String
-    _tr::Transform
-    _vis::Union{MeshCat.Visualizer, Nothing}
-    _scene::Union{AbstractScene, Nothing}
-    _parent::Union{AbstractSceneObject, Nothing}
-    _material::Union{Material, Nothing}
+    _props::Dict{Symbol, Any}
 
-    _points::Vector{SVector{3, Float64}}
+    function LineSegments(; name="defaultAxes", points::Vector{SVector{3, Float64}} = [], kwargs...)
+        props = build_props(; points=points, name=name, kwargs...)
 
-    function LineSegments(points::Vector{SVector{3, Float64}} = [];
-        name::String = "defulatMeshObject", 
-        tr::Transform = identitytransform(), 
-        material::Union{Material, Nothing} = nothing,
-        parent = nothing
-    )
-        return new(name, tr, nothing, nothing, parent, material, points)
+        return new(props)
     end
 end
 
-points(ls::LineSegments) = ls._points
-
+points(ls::LineSegments) = prop(ls, :points)
 
 function render!(ls::LineSegments) 
     v = vis(ls)
@@ -298,8 +321,6 @@ function render!(ls::LineSegments)
     pts = points(ls)
     pts2 = GeometryBasics.Point.(pts)
 
-    # @info lines_material(mat)
-    # @info lines_material(mat)
     if (mat !== nothing)
         MeshCat.setobject!(v, MeshCat.LineSegments(GeometryBasics.Point.(points(ls)), lines_material(mat)))
     else
