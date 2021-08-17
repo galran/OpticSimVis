@@ -1,8 +1,8 @@
 
 
 props(so::AbstractSceneObject) = so._props
-function prop(so::AbstractSceneObject, p::Symbol)
-    return get(props(so), p, nothing)
+function prop(so::AbstractSceneObject, p::Symbol, default_val = nothing)
+    return get(props(so), p, default_val)
 end
 function prop!(so::AbstractSceneObject, p::Symbol, val::Any)
     props(so)[p] = val
@@ -277,23 +277,26 @@ function render!(a::Axes)
 
     point = GeometryBasics.Point(0.0, 0.0, 0.0)
 
+    shaft_scale = prop(a, :shaft_scale, 0.01)
+    axes_scale = prop(a, :axes_scale, 1.0)
+
     color!(mat, Colors.RGBA(0.9, 0.1, 0.1, 1.0))
-    vec = GeometryBasics.Vec(prop(a, :x_axis))
+    vec = GeometryBasics.Vec(prop(a, :x_axis)) * axes_scale
     arrow = MeshCat.ArrowVisualizer(v["X"])
     MeshCat.setobject!(arrow, material(mat))
-    MeshCat.settransform!(arrow, point, vec)
+    MeshCat.settransform!(arrow, point, vec, shaft_radius = shaft_scale)
 
     color!(mat, Colors.RGBA(0.1, 0.9, 0.1, 1.0))
-    vec = GeometryBasics.Vec(prop(a, :y_axis))
+    vec = GeometryBasics.Vec(prop(a, :y_axis)) * axes_scale
     arrow = MeshCat.ArrowVisualizer(v["Y"])
     MeshCat.setobject!(arrow, material(mat))
-    MeshCat.settransform!(arrow, point, vec)
+    MeshCat.settransform!(arrow, point, vec, shaft_radius = shaft_scale)
 
     color!(mat, Colors.RGBA(0.1, 0.1, 0.9, 1.0))
-    vec = GeometryBasics.Vec(prop(a, :z_axis))
+    vec = GeometryBasics.Vec(prop(a, :z_axis)) * axes_scale
     arrow = MeshCat.ArrowVisualizer(v["Z"])
     MeshCat.setobject!(arrow, material(mat))
-    MeshCat.settransform!(arrow, point, vec)
+    MeshCat.settransform!(arrow, point, vec, shaft_radius = shaft_scale)
 
     MeshCat.settransform!(v, tr2affine(local_tr(a)))
 end

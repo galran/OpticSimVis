@@ -28,6 +28,10 @@ function to_color(c::Colors.RGBA)
     return c
 end
 
+function to_color(c::Colors.RGB)
+    return RGBA(c)
+end
+
 function to_color(c::Symbol)
     return return to_color(Colors.color_names[string(c)])
 end

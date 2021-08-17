@@ -5,7 +5,7 @@ using Blink
 using MeshCat
 using CoordinateTransformations
 using Rotations
-using GeometryBasics: HyperRectangle, Vec, Point, Mesh
+using GeometryBasics: HyperRectangle, Vec, Point, Mesh, Point3f0
 using Colors: RGBA, RGB
 
 
@@ -31,16 +31,36 @@ delete!(vis)
 
 v = vis[:lines]
 settransform!(v, Translation(-1, -1, 0))
-θ = range(0, stop=2π, length=10)
+points = [
+    Point3f0(1, 1, 1),
+    Point3f0(2, 2, 2),
+    Point3f0(1, 1, 3),
+    Point3f0(2, 2, 3),
+]
+colors = [
+    RGBA(1, 0, 0, 1),
+    RGBA(1, 0, 0, 1),
+    RGBA(0, 1, 0, 1),
+    RGBA(0, 1, 0, 1),
+]
 mat = LineBasicMaterial(
     color=RGBA(1.0, 1.0, 0.0, 1.0),
     linewidth = 11,
     # vertexColors = 1,
 )
-setobject!(v[:line_segments], LineSegments(Point.(0.5 .* sin.(θ), 0, 0.5 .* cos.(θ)), mat))
+setobject!(v[:line_segments], LineSegments(points, colors))
+
+# v = vis[:lines]
+# settransform!(v, Translation(-1, -1, 0))
+# θ = range(0, stop=2π, length=10)
+# mat = LineBasicMaterial(
+#     color=RGBA(1.0, 1.0, 0.0, 1.0),
+#     linewidth = 11,
+#     # vertexColors = 1,
+# )
+# setobject!(v[:line_segments], LineSegments(Point.(0.5 .* sin.(θ), 0, 0.5 .* cos.(θ)), mat))
 
 
-MeshCat.develop_meshcat_assets()
 
 # box = HyperRectangle(Vec(0., 0, 0), Vec(1., 1, 1))
 # setobject!(vis["box"], box)

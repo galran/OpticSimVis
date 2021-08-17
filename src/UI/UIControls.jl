@@ -4,7 +4,7 @@ module UIControls
 using Parameters
 import UUIDs
 
-export Slider, Button, Field, value, on
+export Slider, Button, Field, value, on, asInt
 
 abstract type AbstractUIControl end
 
@@ -16,6 +16,42 @@ typedict(x) = Dict(fn=>getfield(x, fn) for fn ∈ filter(x->!startswith(string(x
 
 function on(func::Function, control::AbstractUIControl)
     control._func = func    
+end
+
+function asInt(control::AbstractUIControl)::Int
+    try
+        val = value(control)
+        @show val, typeof(val)
+        if (isa(val, String))
+            return Int(floor(parse(Float64, val)))
+        end
+        if (isa(val, Int64))
+            return val
+        end
+        if (isa(val, Float64))
+            return Int(floor(val))
+        end
+    catch
+        return 0
+    end
+end
+
+function asFloat(control::AbstractUIControl)::Int
+    try
+        val = value(control)
+        if (isa(val, String))
+            return parse(Float64, val)
+        end
+        if (isa(val, Int))
+            return convert(Float64, val)
+        end
+        if (isa(val, Float64))
+            return val
+        end
+        @error "should not reach here"
+    catch
+        return 0
+    end
 end
 
 @with_kw mutable struct Slider <: AbstractUIControl 

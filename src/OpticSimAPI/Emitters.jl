@@ -54,7 +54,8 @@ end
 #-------------------------------------
 # draw point origin
 #-------------------------------------
-function draw!(scene::Scene, o::Origins.Point; transform::Geometry.Transform = Transform(), kwargs...) where {T<:Real}
+function draw!(scene::Scene, o::Origins.Point; parent_so::AbstractSceneObject = root(scene), kwargs...) where {T<:Real}
+    transform = tr(parent_so)
 
     pos = origin(transform)
     obj = draw!(scene, [pos]; size=0.01, kwargs...)
@@ -66,7 +67,8 @@ end
 #-------------------------------------
 # draw RectGrid and RectUniform origins
 #-------------------------------------
-function draw!(scene::Scene, o::Union{Origins.RectGrid, Origins.RectUniform}; transform::Geometry.Transform = Transform(), kwargs...) where {T<:Real}
+function draw!(scene::Scene, o::Union{Origins.RectGrid, Origins.RectUniform}; parent_so::AbstractSceneObject = root(scene), kwargs...) where {T<:Real}
+    transform = tr(parent_so)
     dir = forward(transform)
     uv = SVector{3}(right(transform))
     vv = SVector{3}(up(transform))
@@ -75,7 +77,7 @@ function draw!(scene::Scene, o::Union{Origins.RectGrid, Origins.RectUniform}; tr
     plane = OpticSim.Plane(dir, pos)
     rect = OpticSim.Rectangle(plane, o.width / 2, o.height / 2, uv, vv)
     
-    obj = draw!(scene, rect;  kwargs...)
+    obj = draw!(scene, rect;  parent_so=parent_so, kwargs...)
 
     maybe_draw_debug_info(scene, obj[:scene_object], o; transform=transform, kwargs...)
     return obj
@@ -85,7 +87,8 @@ end
 #-------------------------------------
 # draw hexapolar origin
 #-------------------------------------
-function draw!(scene::Scene, o::Origins.Hexapolar{T}; transform::Geometry.Transform{T} = Transform(), kwargs...) where {T<:Real}
+function draw!(scene::Scene, o::Origins.Hexapolar{T}; parent_so::AbstractSceneObject = root(scene), kwargs...) where {T<:Real}
+    transform = tr(parent_so)
     dir = forward(transform)
     uv = SVector{3}(right(transform))
     vv = SVector{3}(up(transform))
@@ -104,11 +107,18 @@ end
 #-------------------------------------
 # draw source
 #-------------------------------------
-function draw!(scene::Scene, s::Sources.Source{T}; parent_transform::Geometry.Transform = Transform(), debug::Bool=false, kwargs...) where {T<:Real}
-   
-    obj = draw!(scene, s.origins;  transform=parent_transform * s.transform, debug=debug, kwargs...)
+function draw!(scene::Scene, s::Sources.Source{T}; parent_so::AbstractSceneObject = root(scene), debug::Bool=false, kwargs...) where {T<:Real}
+
+    name = "Source-$(UUIDs.uuid1())"
+    t = s.transform;        
+    root_so = EmptySceneObject(tr=t, name=name)
+    OpticSimVis.parent!(root_so , parent_so)
+    
+    obj = draw!(scene, s.origins;  color=RGBA(1.0, 1.0, 0.0, 0.5), parent_so=root_so, debug=debug, kwargs...)
 
     if (debug)
+        parent_transform = tr(parent_so)
+
         m = zeros(T, length(s), 7)
         for (index, optical_ray) in enumerate(s)
             ray = OpticSim.ray(optical_ray)
@@ -162,4 +172,24 @@ function draw!(scene::Scene, s::Sources.Source{T}; parent_transform::Geometry.Tr
 end
 
 
+#-------------------------------------
+# draw composite source
+#-------------------------------------
+function draw!(scene::Scene, s::Sources.CompositeSource{T}; parent_so::AbstractSceneObject = root(scene), kwargs...) where {T<:Real}
 
+    name = "Composite Source" # -$(UUIDs.uuid1())"
+    t = s.transform;        
+    root_so = EmptySceneObject(name=name)
+    OpticSimVis.parent!(root_so , parent_so)
+
+    # axes = OpticSimVis.Axes(
+    #     # tr=Transform(pos), 
+    #     axes_scale=20,
+    #     shaft_scale=5,
+    #     name="Debug Axes")
+    # OpticSimVis.parent!(axes , root_so)
+
+    for source in s.sources
+        draw!(scene, source; parent_so=root_so, kwargs...)
+    end
+end

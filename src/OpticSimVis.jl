@@ -11,6 +11,7 @@ import GeometryBasics
 # using GeometryBasics: HyperRectangle, Vec, Point, Mesh
 using Colors: RGBA, RGB
 import Colors
+import ColorSchemes
 import FileIO
 import MeshIO
 
@@ -25,6 +26,7 @@ include("Scene.jl")
 
 include("OpticSimAPI/General.jl")
 include("OpticSimAPI/Emitters.jl")
+include("OpticSimAPI/HeadEyeModel.jl")
 
 include("JSInterface/JuliaJSBridge.jl")
 include("UI/UIControls.jl")

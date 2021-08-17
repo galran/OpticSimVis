@@ -5,6 +5,7 @@ struct Scene <: AbstractScene
     _vis::MeshCat.Visualizer
     _windows::Union{Blink.Window, Nothing}
     _root::AbstractSceneObject
+    _root_transform::AbstractSceneObject
 
     function Scene(; openWindow::Bool = false)
         vis = MeshCat.Visualizer()
@@ -22,9 +23,9 @@ struct Scene <: AbstractScene
             open(vis, win)
         end
  
-        root = prepare_scene!(vis)
+        root, root_transform = prepare_scene!(vis)
 
-        return new(vis, win, root)
+        return new(vis, win, root, root_transform)
     end
 
     function Scene(vis::MeshCat.Visualizer)
@@ -44,6 +45,7 @@ url(s::Scene) = MeshCat.url(s._vis.core)
 vis(s::Scene) = s._vis
 win(s::Scene) = s._window
 root(s::Scene) = s._root
+root_transform(s::Scene) = s._root_transform
 
 function clear(s::Scene)
     root_so = root(s)
@@ -64,14 +66,18 @@ function clear(s::Scene)
 end
 
 function prepare_scene!(vis::MeshCat.Visualizer)
-    root = EmptySceneObject(name="OpticSim")
-    root_vis = vis["OpticSim"]
+    root_transform = EmptySceneObject(name="OpticSimTransform")
+    root_transform_vis = vis["OpticSimTransform"]
+    vis!(root_transform, root_transform_vis)
+
+    root = EmptySceneObject(name="OpticSimRoot")
+    root_vis = root_transform_vis["OpticSimRoot"]
     vis!(root, root_vis)
 
     # flip Y and Z axes
-    MeshCat.settransform!(root_vis, tr2affine(Transform(unitX3(), unitZ3(), unitY3())))
+    MeshCat.settransform!(root_transform_vis, tr2affine(Transform(unitX3(), unitZ3(), unitY3())))
 
-    return root
+    return root, root_transform
 end
 
 function set_camera!(s::Scene, tr::Transform)
@@ -86,6 +92,17 @@ end
 
 function set_Z_up!(s::Scene)
     MeshCat.settransform!(vis(s), tr2affine(Transform(unitX3(), unitY3(), unitZ3())))
+end
+
+function grid!(s::Scene, visible::Bool)
+    MeshCat.setprop!(vis(s)["/Grid"], "visible", visible)
+end
+
+function test1!(s::Scene)
+    cam_vis = vis(s)["/Cameras/default/rotated/<object>"]
+
+    # MeshCat.setprop!(cam_vis, "zoom", 1.0)
+    MeshCat.setprop!(cam_vis, "far", 1000.0)
 end
 
 
