@@ -31,8 +31,10 @@ include("OpticSimAPI/HeadEyeModel.jl")
 include("JSInterface/JuliaJSBridge.jl")
 include("UI/UIControls.jl")
 include("UI/SimpleUI.jl")
+include("UI/FlexUI.jl")
 
 using ..UIControls
 using ..SimpleUI
+export FlexUI
 
 end # module
