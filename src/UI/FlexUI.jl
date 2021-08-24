@@ -194,6 +194,11 @@ function getUIFolder()
         return res
     end
 
+    res = joinpath(dirname(@__FILE__), "..", "data", "dist");
+    if (isdir(res))
+        return res
+    end
+
     res = raw"D:\Projects\Rays\Github\FlexUI\dist\FlexUI"
 
     return res;
