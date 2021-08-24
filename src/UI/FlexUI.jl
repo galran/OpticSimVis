@@ -158,7 +158,7 @@ function fix_controls!(app::App, controls::Vector{UIControls.AbstractUIControl})
             fix_controls!(app, Vector{UIControls.AbstractUIControl}([control.content]))
         end
         if (hasproperty(control, :tabs))
-            fix_controls!(app, control.tabs)
+            fix_controls!(app, Vector{UIControls.AbstractUIControl}(control.tabs))
         end
     end
 end
