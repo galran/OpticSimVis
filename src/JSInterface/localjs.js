@@ -1,15 +1,15 @@
 
-console.log("Hellow from local.js")
+// console.log("Hellow from local.js")
 
-function MoveElements() {
-    var newParent = document.getElementById('RanGal');
-    var oldParent = document.getElementById('RanGal2');
+// function MoveElements() {
+//     var newParent = document.getElementById('RanGal');
+//     var oldParent = document.getElementById('RanGal2');
 
-    console.log("New Parent", newParent)
-    console.log("Old Parent", oldParent)
+//     console.log("New Parent", newParent)
+//     console.log("Old Parent", oldParent)
 
-    newParent.appendChild(oldParent);
-}
+//     newParent.appendChild(oldParent);
+// }
 
 
 

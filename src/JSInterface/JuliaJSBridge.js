@@ -1,6 +1,6 @@
 
 
-console.log("Hi from JuliaJSCommunicator 22");
+/* console.log("Hi from JuliaJSCommunicator 22"); */
 
 JuliaJS = {
     Requests: {

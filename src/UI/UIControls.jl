@@ -1,12 +1,41 @@
 
 module UIControls
 
+using ..OpticSimVis
+import ..UIVariables
 using Parameters
 import UUIDs
 
-export Slider, Button, Field, value, on, asInt
+#------------------------------------------------------------------------------
+# EXports
+#------------------------------------------------------------------------------
+export  Container,
+        Slider,
+        Button,        
+        MeshCatViewer,
+        Label,
+        Image,
+        PanZoom,
+        Field,
+        ButtonToggle,
+        RadioGroup,
+        CheckBox,
+        ExpansionPanel, 
+        Accordion,
+        Tabs,
+        Tab,
 
-abstract type AbstractUIControl end
+        VContainer,
+        HContainer,
+        H1Label,
+        H2Label,
+        H3Label,
+        H4Label,
+
+        DummyExport
+        
+
+
 
 # mutable struct Slider <: UIControl
 # end
@@ -14,78 +43,200 @@ abstract type AbstractUIControl end
 # typedict(x) = Dict(fn=>getfield(x, fn) for fn ∈ fieldnames(typeof(x)))
 typedict(x) = Dict(fn=>getfield(x, fn) for fn ∈ filter(x->!startswith(string(x), "_"), fieldnames(typeof(x))))
 
-function on(func::Function, control::AbstractUIControl)
-    control._func = func    
+# function on(func::Function, control::AbstractUIControl)
+#     control._func = func    
+# end
+
+# function asInt(control::AbstractUIControl)::Int
+#     try
+#         val = value(control)
+#         @show val, typeof(val)
+#         if (isa(val, String))
+#             return Int(floor(parse(Float64, val)))
+#         end
+#         if (isa(val, Int64))
+#             return val
+#         end
+#         if (isa(val, Float64))
+#             return Int(floor(val))
+#         end
+#     catch
+#         return 0
+#     end
+# end
+
+# function asFloat(control::AbstractUIControl)::Int
+#     try
+#         val = value(control)
+#         if (isa(val, String))
+#             return parse(Float64, val)
+#         end
+#         if (isa(val, Int))
+#             return convert(Float64, val)
+#         end
+#         if (isa(val, Float64))
+#             return val
+#         end
+#         @error "should not reach here"
+#     catch
+#         return 0
+#     end
+# end
+
+@with_kw mutable struct Container <: AbstractUIControl 
+    type::String = "container"
+    direction::String = "row"
+    gap::String = "10px"
+    align::String = "left left"
+    children::Vector{UIControls.AbstractUIControl} = []
+
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
 end
 
-function asInt(control::AbstractUIControl)::Int
-    try
-        val = value(control)
-        @show val, typeof(val)
-        if (isa(val, String))
-            return Int(floor(parse(Float64, val)))
-        end
-        if (isa(val, Int64))
-            return val
-        end
-        if (isa(val, Float64))
-            return Int(floor(val))
-        end
-    catch
-        return 0
-    end
-end
+VContainer(args...) = Container(direction = "column", children=[args...])
+HContainer(args...) = Container(direction = "row", align="left center",  children=[args...])
 
-function asFloat(control::AbstractUIControl)::Int
-    try
-        val = value(control)
-        if (isa(val, String))
-            return parse(Float64, val)
-        end
-        if (isa(val, Int))
-            return convert(Float64, val)
-        end
-        if (isa(val, Float64))
-            return val
-        end
-        @error "should not reach here"
-    catch
-        return 0
-    end
-end
 
 @with_kw mutable struct Slider <: AbstractUIControl 
     type::String = "slider"
-    id::String = string(UUIDs.uuid1())
-    caption::String = "default slider"
+    text::String = "default slider"
     min::Float64 = 0.0
     max::Float64 = 100.0
     value::Float64 = 0
     step::Float64 = 1.0
+    variable::Any = nothing
 
-    _func::Union{Nothing, Function} = nothing
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
 end
-value(c::Slider) = c.value
+# value(c::Slider) = c.value
 
 @with_kw mutable struct Button <: AbstractUIControl 
     type::String = "button"
-    id::String = string(UUIDs.uuid1())
-    caption::String = "default button"
-    text::String = "Click"
+    text::String = "default button"
+    variable::Any = nothing
 
-    _func::Union{Nothing, Function} = nothing
+    _variable_name_to_create::String = ""
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
 end
-value(c::Button) = c.text
+# value(c::Button) = c.text
+
+function Button(text::String, var_name::String) 
+    return Button(text=text, _variable_name_to_create=var_name)
+end
+
+
+@with_kw mutable struct MeshCatViewer <: AbstractUIControl 
+    type::String = "meshcat-viewer"
+    url::String = ""
+    width::Any = "100%"
+    height::Any = "600px"
+
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
+end
+# value(c::Button) = c.text
+
+@with_kw mutable struct Label <: AbstractUIControl 
+    type::String = "label"
+    class::String = "normal"
+    text::Any = ""
+    variable::Any = nothing
+    isHTML::Bool = false
+
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
+end
+
+Label(text::String) = Label(text=text)
+H1Label(text::String) = Label(text=text, class="h1")
+H2Label(text::String) = Label(text=text, class="h2")
+H3Label(text::String) = Label(text=text, class="h3")
+H4Label(text::String) = Label(text=text, class="h4")
+
+@with_kw mutable struct Image <: AbstractUIControl 
+    type::String = "image"
+    width::Any = "auto"
+    height::Any = "auto"
+    variable::Any = nothing
+    data::Any = nothing
+
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
+end
+
+@with_kw mutable struct PanZoom <: AbstractUIControl 
+    type::String = "pan-zoom"
+    width::Any = "auto"
+    height::Any = "auto"
+    content::Union{Nothing, UIControls.Container} = nothing
+
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
+end
 
 @with_kw mutable struct Field <: AbstractUIControl 
     type::String = "field"
-    id::String = string(UUIDs.uuid1())
-    caption::String = "default field"
-    value::String = "Click"
+    input::String = "number"
+    label::String = "default label"
+    hint::String = "hint"
+    options::Union{Nothing, Vector{Any}} = nothing
+    variable::Any = nothing
 
     _func::Union{Nothing, Function} = nothing
 end
-value(c::Field) = c.value
+
+@with_kw mutable struct ButtonToggle <: AbstractUIControl 
+    type::String = "button-toggle"
+    options::Union{Nothing, Vector{Any}} = nothing
+    variable::Any = nothing
+
+    _func::Union{Nothing, Function} = nothing
+end
+
+@with_kw mutable struct RadioGroup <: AbstractUIControl 
+    type::String = "radio-group"
+    direction::String = "horizontal"
+    options::Union{Nothing, Vector{Any}} = nothing
+    variable::Any = nothing
+
+    _func::Union{Nothing, Function} = nothing
+end
+
+@with_kw mutable struct CheckBox <: AbstractUIControl 
+    type::String = "checkbox"
+    label::String = "default label"
+    variable::Any = nothing
+
+    _func::Union{Nothing, Function} = nothing
+end
+
+@with_kw mutable struct ExpansionPanel <: AbstractUIControl 
+    type::String = "expansion-panel"
+    title::String = "defaut title"
+    summary::String = ""
+    content::Union{Nothing, UIControls.Container} = nothing
+
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
+end
+
+@with_kw mutable struct Accordion <: AbstractUIControl 
+    type::String = "accordion"
+    panels::Union{Nothing, Vector{UIControls.ExpansionPanel}} = nothing
+
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
+end
+
+
+@with_kw mutable struct Tab <: AbstractUIControl 
+    type::String = "tab"
+    label::String = "default label"
+    content::Union{Nothing, UIControls.Container} = nothing
+
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
+end
+
+@with_kw mutable struct Tabs <: AbstractUIControl 
+    type::String = "tabs"
+    tabs::Union{Nothing, Vector{UIControls.Tab}} = nothing
+
+    _app::Union{Nothing, OpticSimVis.AbstractUIApp} = nothing
+end
 
 
 end # module UIControlsget

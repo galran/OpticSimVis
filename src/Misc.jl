@@ -3,6 +3,29 @@
 abstract type AbstractScene end
 abstract type AbstractSceneObject end
 abstract type AbstractMaterial end
+abstract type AbstractUIApp end
+abstract type AbstractUIVariable end
+abstract type AbstractUIValidation end
+abstract type AbstractUIControl end
+
+export  AbstractScene,
+        AbstractSceneObject,
+        AbstractMaterial,
+        AbstractUIApp,
+        AbstractUIVariable,
+        AbstractUIValidation,
+        AbstractUIControl
+
+
+function updateVariable!(app::AbstractUIApp, var::AbstractUIVariable)
+    @error "abstract function - should not reach here"
+end
+
+show_png(io, x) = show(io, MIME"image/png"(), x)
+show_svg(io, x) = show(io, MIME"image/svg+xml"(), x)
+
+base64png(img) = "data:image/png;base64,$(Base64.base64encode(show_png, img))"
+base64svg(img) = "data:image/svg+xml;base64,$(Base64.base64encode(show_svg, img))"
 
 
 #---------------------------------------------------------------
