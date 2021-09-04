@@ -68,7 +68,7 @@ end
 # draw RectGrid and RectUniform origins
 #-------------------------------------
 function draw!(scene::Scene, o::Union{Origins.RectGrid, Origins.RectUniform}; parent_so::AbstractSceneObject = root(scene), kwargs...) where {T<:Real}
-    transform = tr(parent_so)
+    transform = local_tr(parent_so)
     dir = forward(transform)
     uv = SVector{3}(right(transform))
     vv = SVector{3}(up(transform))

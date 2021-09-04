@@ -14,7 +14,7 @@ function draw!(scene::Scene, h::OpticSim.ParaxialAnalysis.HeadEye.Head; draw_hea
     mat = Material(;kwargs...)
     # head_root = EmptySceneObject(material=mat, name=name)
     head_root = Axes(
-        tr=OpticSim.ParaxialAnalysis.HeadEye.tr(h), 
+        tr=transform(OpticSim.ParaxialAnalysis.HeadEye.tr(h)), 
         material=mat, 
         shaft_scale=0.4,
         axes_scale=10.0,
@@ -37,7 +37,7 @@ function draw!(scene::Scene, h::OpticSim.ParaxialAnalysis.HeadEye.Head; draw_hea
         # Vis.draw!(scene, e, parent_transform = ParaxialAnalysis.HeadEye.tr(h))
         local name = ParaxialAnalysis.HeadEye.text(eye)
         eye_so = Axes(
-            tr=OpticSim.ParaxialAnalysis.HeadEye.tr(eye), 
+            tr=transform(OpticSim.ParaxialAnalysis.HeadEye.tr(eye)), 
             material=mat, 
             shaft_scale=0.2,
             axes_scale=5.0,
@@ -47,7 +47,7 @@ function draw!(scene::Scene, h::OpticSim.ParaxialAnalysis.HeadEye.Head; draw_hea
         pupil = ParaxialAnalysis.HeadEye.pupil(eye)
         name = "Pupil"
         pupil_so = Axes(
-            tr=OpticSim.ParaxialAnalysis.HeadEye.tr(pupil), 
+            tr=transform(OpticSim.ParaxialAnalysis.HeadEye.tr(pupil)), 
             material=mat, 
             shaft_scale=0.1,
             axes_scale=2.0,

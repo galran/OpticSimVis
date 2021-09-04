@@ -1,9 +1,10 @@
 name = "OpticSimVis"
 uuid = "d115d6ac-2c82-4282-b69b-fe09df21ab27"
 authors = ["Ran Gal <rgal@microsoft.com>"]
-version = "0.0.1"
+version = "0.0.2"
 
 [deps]
+Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 Blink = "ad839575-38b3-5650-b840-f874b8c74a25"
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
@@ -18,4 +19,6 @@ OpticSim = "24114763-4efb-45e7-af0e-cde916beb153"
 Parameters = "d96e819e-fc66-5662-9728-84c9c7592b0a"
 Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Twinkle = "55254e13-1f76-49cc-b115-017fbe569f93"
+UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"

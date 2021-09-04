@@ -20,24 +20,14 @@ using StaticArrays
 import UUIDs
 import Base64
 
+using Twinkle, Twinkle.FlexUI
+
 include("Misc.jl")
-include("Material.jl")
-include("SceneObject.jl")
-include("Scene.jl")
 
 include("OpticSimAPI/General.jl")
 include("OpticSimAPI/Emitters.jl")
 include("OpticSimAPI/HeadEyeModel.jl")
 
-include("JSInterface/JuliaJSBridge.jl")
-include("UI/UIVariables.jl")
-include("UI/UIControls.jl")
-include("UI/SimpleUI.jl")
-include("UI/FlexUI.jl")
-
-using ..UIControls
-using ..UIVariables
-using ..SimpleUI
 
 # export UIVariables
 # export FlexUI
@@ -46,7 +36,39 @@ using ..SimpleUI
 #------------------------------------------------------------------------------
 # EXports
 #------------------------------------------------------------------------------
-export  BasicValidation, on, Variable
+export  Twinkle, 
+        FlexUI,
+        App,
+        set_camera!,
+        prop, prop!,
+
+        Scene,
+        set_Y_up!,
+        set_Z_up!,
+        grid!,
+        root, root!,
+        parent, parent!,
+        material, material!,
+        Material,
+        transform, lookAt,
+        rotation,
+        local_tr, local_tr!,
+        cameraTransform!, cameraPlanes!,
+        Box,
+        Mesh,
+        Arrow,
+        Axes,
+        LineSegments,
+        PointCloud,
+        dataPath,
+        unitX3,
+        unitY3,
+        unitZ3,
+        zero3,
+        cameraTransform!,        
+        url,
+        clear,
+        DummyExport
 
 export  Container,
         Slider,
@@ -63,9 +85,12 @@ export  Container,
         Accordion,
         Tabs,
         Tab,
+        Divider,
+        Card,
 
         VContainer,
         HContainer,
+        HContainerSpace,
         H1Label,
         H2Label,
         H3Label,
@@ -73,6 +98,35 @@ export  Container,
 
         DummyExport
 
-export FlexUI        
+export  BasicValidation, on, Variable
+export  FlexUI, addVariable!, prop, prop!, controls, controls!, renderFunction, renderFunction!
+
+# export  Container,
+#         Slider,
+#         Button,        
+#         MeshCatViewer,
+#         Label,
+#         Image,
+#         PanZoom,
+#         Field,
+#         ButtonToggle,
+#         RadioGroup,
+#         CheckBox,
+#         ExpansionPanel, 
+#         Accordion,
+#         Tabs,
+#         Tab,
+
+#         VContainer,
+#         HContainer,
+#         H1Label,
+#         H2Label,
+#         H3Label,
+#         H4Label,
+
+#         DummyExport
+
+# export FlexUI        
+# export Twinkle
 
 end # module

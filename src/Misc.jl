@@ -1,25 +1,25 @@
 
 # declaration of basic types 
-abstract type AbstractScene end
-abstract type AbstractSceneObject end
-abstract type AbstractMaterial end
-abstract type AbstractUIApp end
-abstract type AbstractUIVariable end
-abstract type AbstractUIValidation end
-abstract type AbstractUIControl end
+# abstract type AbstractScene end
+# abstract type AbstractSceneObject end
+# abstract type AbstractMaterial end
+# abstract type AbstractUIApp end
+# abstract type AbstractUIVariable end
+# abstract type AbstractUIValidation end
+# abstract type AbstractUIControl end
 
-export  AbstractScene,
-        AbstractSceneObject,
-        AbstractMaterial,
-        AbstractUIApp,
-        AbstractUIVariable,
-        AbstractUIValidation,
-        AbstractUIControl
+# export  AbstractScene,
+#         AbstractSceneObject,
+#         AbstractMaterial,
+#         AbstractUIApp,
+#         AbstractUIVariable,
+#         AbstractUIValidation,
+#         AbstractUIControl
 
 
-function updateVariable!(app::AbstractUIApp, var::AbstractUIVariable)
-    @error "abstract function - should not reach here"
-end
+# function updateVariable!(app::AbstractUIApp, var::AbstractUIVariable)
+#     @error "abstract function - should not reach here"
+# end
 
 show_png(io, x) = show(io, MIME"image/png"(), x)
 show_svg(io, x) = show(io, MIME"image/svg+xml"(), x)
@@ -31,8 +31,17 @@ base64svg(img) = "data:image/svg+xml;base64,$(Base64.base64encode(show_svg, img)
 #---------------------------------------------------------------
 #   Transform to AffineMat that can be used in the renderer
 #---------------------------------------------------------------
-function tr2affine(tr::Transform)
-    return AffineMap(tr[1:3,1:3], Geometry.origin(tr))
+# function tr2affine(tr::Transform)
+#     return AffineMap(tr[1:3,1:3], Geometry.origin(tr))
+# end
+function Twinkle.transform(t::OpticSim.Transform{T}) where {T<:Real}
+    rot = SMatrix{3, 3, T}(
+        t[1, 1], t[2, 1], t[3, 1], 
+        t[1, 2], t[2, 2], t[3, 2],
+        t[1, 3], t[2, 3], t[3, 3])
+
+    translation = SVector(t[1, 4], t[2, 4], t[3, 4])
+    return AffineMap(rot, translation)
 end
 
 
