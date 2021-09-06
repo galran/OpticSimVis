@@ -55,7 +55,7 @@ end
 # draw point origin
 #-------------------------------------
 function draw!(scene::Scene, o::Origins.Point; parent_so::AbstractSceneObject = root(scene), kwargs...) where {T<:Real}
-    transform = tr(parent_so)
+    transform = local_tr(parent_so)
 
     pos = origin(transform)
     obj = draw!(scene, [pos]; size=0.01, kwargs...)
@@ -88,7 +88,7 @@ end
 # draw hexapolar origin
 #-------------------------------------
 function draw!(scene::Scene, o::Origins.Hexapolar{T}; parent_so::AbstractSceneObject = root(scene), kwargs...) where {T<:Real}
-    transform = tr(parent_so)
+    transform = local_tr(parent_so)
     dir = forward(transform)
     uv = SVector{3}(right(transform))
     vv = SVector{3}(up(transform))
@@ -117,7 +117,7 @@ function draw!(scene::Scene, s::Sources.Source{T}; parent_so::AbstractSceneObjec
     obj = draw!(scene, s.origins;  color=RGBA(1.0, 1.0, 0.0, 0.5), parent_so=root_so, debug=debug, kwargs...)
 
     if (debug)
-        parent_transform = tr(parent_so)
+        parent_transform = toTransform(local_tr(parent_so))
 
         m = zeros(T, length(s), 7)
         for (index, optical_ray) in enumerate(s)

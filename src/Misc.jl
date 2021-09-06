@@ -1,39 +1,9 @@
 
-# declaration of basic types 
-# abstract type AbstractScene end
-# abstract type AbstractSceneObject end
-# abstract type AbstractMaterial end
-# abstract type AbstractUIApp end
-# abstract type AbstractUIVariable end
-# abstract type AbstractUIValidation end
-# abstract type AbstractUIControl end
-
-# export  AbstractScene,
-#         AbstractSceneObject,
-#         AbstractMaterial,
-#         AbstractUIApp,
-#         AbstractUIVariable,
-#         AbstractUIValidation,
-#         AbstractUIControl
-
-
-# function updateVariable!(app::AbstractUIApp, var::AbstractUIVariable)
-#     @error "abstract function - should not reach here"
-# end
-
-show_png(io, x) = show(io, MIME"image/png"(), x)
-show_svg(io, x) = show(io, MIME"image/svg+xml"(), x)
-
-base64png(img) = "data:image/png;base64,$(Base64.base64encode(show_png, img))"
-base64svg(img) = "data:image/svg+xml;base64,$(Base64.base64encode(show_svg, img))"
 
 
 #---------------------------------------------------------------
 #   Transform to AffineMat that can be used in the renderer
 #---------------------------------------------------------------
-# function tr2affine(tr::Transform)
-#     return AffineMap(tr[1:3,1:3], Geometry.origin(tr))
-# end
 function Twinkle.transform(t::OpticSim.Transform{T}) where {T<:Real}
     rot = SMatrix{3, 3, T}(
         t[1, 1], t[2, 1], t[3, 1], 
@@ -44,29 +14,10 @@ function Twinkle.transform(t::OpticSim.Transform{T}) where {T<:Real}
     return AffineMap(rot, translation)
 end
 
-
-#---------------------------------------------------------------
-#   Color conversion methods
-#---------------------------------------------------------------
-function to_color(c::Tuple{Int64, Int64, Int64})
-    return Colors.RGBA((c ./ 255)...)
+function toTransform(tr::CoordinateTransformations.AffineMap)
+    return OpticSim.Transform(tr.linear, tr.translation)
 end
 
-function to_color(c::Tuple{Float64, Int64, Int64})
-    return Colors.RGBA(c...)
-end
-
-function to_color(c::Colors.RGBA)
-    return c
-end
-
-function to_color(c::Colors.RGB)
-    return RGBA(c)
-end
-
-function to_color(c::Symbol)
-    return return to_color(Colors.color_names[string(c)])
-end
 
 
 #---------------------------------------------------------------
@@ -87,4 +38,73 @@ function to_mesh(tm::OpticSim.TriangleMesh{T}) where {T<:Real}
     # create the mesh
     mesh = GeometryBasics.Mesh(points, indices)
     return mesh
+end
+
+
+#---------------------------------------------------------------
+#   Examples Utilities
+#---------------------------------------------------------------
+fixFolderSeperator(fn::String) = replace(fn, '\\' => '/')
+
+"""
+    rootFolder()
+
+return the root folder for this package.
+"""
+function rootFolder()
+    return fixFolderSeperator(abspath(joinpath(dirname(@__FILE__), "..")))
+end
+
+
+"""
+    examplesFolder()
+
+return the examples folder (~/examples) for this package.
+"""
+function examplesFolder()
+    return fixFolderSeperator(abspath(joinpath(rootFolder(), "examples")))
+end
+
+"""
+    examplesList()
+
+Display a list of avalable examples.
+"""
+function examplesList()
+    folder = examplesFolder();
+
+    files = readdir(folder, join=false)
+
+    all_jl_files = [fn for fn in files if splitext(basename(fn))[2] == ".jl"]
+
+    println("-"^60)
+    println("Examples List for OpticSimVis  [$(folder)]")
+    println("-"^60)
+    for f in all_jl_files
+        len = length(f)
+        if (len < 20)
+            spaces = " "^(20 - len)
+        else
+            spaces = ""
+        end
+        println("    $(f)$(spaces)       to run:  julia> OpticSimVis.runExample(\"$(splitext(f)[1])\")")
+    end
+
+end
+
+"""
+    runExample(example::String)
+
+Run the specific example. [example] is given without extension.
+For example, if we have an example file named "Emitters.jl" the command to run it is:
+OpticSimVis.runExample("Emitters")
+"""
+function runExample(example::String)
+    fn = fixFolderSeperator(joinpath(examplesFolder(), "$(splitext(example)[1]).jl"))
+
+    @show fn
+    code = "include(\"$fn\")"
+    @show code
+    exp = Meta.parse(code)
+    return eval(exp)
 end
