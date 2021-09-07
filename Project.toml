@@ -22,3 +22,6 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Twinkle = "55254e13-1f76-49cc-b115-017fbe569f93"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
+
+[compat]
+OpticSim = ">= 0.5"
